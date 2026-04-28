@@ -11,6 +11,7 @@ class AuthController extends GetxController {
     Get.back(result: true);
   }
 
+  //
   Future<void> logout() async {
     await _authService.logout();
     currentUser = null;
