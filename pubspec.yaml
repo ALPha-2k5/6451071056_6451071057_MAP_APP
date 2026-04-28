@@ -9,3 +9,15 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   firebase_core: ^4.7.0
+flutter_launcher_icons:
+android: true
+ios: true
+image_path: "assets/images/logos/t-store-splash-logo-white.png"
+# The following section is specific to Flutter packages
+# The following section is specific to Flutter packages.
+flutter:
+assets:
+- assets/images/logos/
+- assets/images/on_boarding_images/
+- assets/images/animations/
+- assets/images/banners/
