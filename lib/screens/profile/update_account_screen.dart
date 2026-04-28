@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../../common/styles/app_colors.dart';
 import '../../routes/app_routes.dart';
 import 'package:get/get.dart';
-import 'package:thuchanh/controller/update_account_controller.dart';
+import 'package:thuc_hanh/controller/update_account_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

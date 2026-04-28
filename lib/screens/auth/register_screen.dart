@@ -1,4 +1,4 @@
-import 'package:thuchanh/controller/register_controller.dart';
+import 'package:thuc_hanh/controller/register_controller.dart';
 import 'package:flutter/material.dart';
 import '../../common/widgets/primary_button.dart';
 import '../../common/widgets/social_login_button.dart';

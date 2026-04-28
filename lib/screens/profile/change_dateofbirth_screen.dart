@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:thuchanh/controller/update_account_controller.dart';
+import 'package:thuc_hanh/controller/update_account_controller.dart';
 
 class ChangeDateOfBirthScreen extends StatefulWidget {
   const ChangeDateOfBirthScreen({super.key});

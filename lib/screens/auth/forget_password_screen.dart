@@ -4,7 +4,7 @@ import '../../routes/app_routes.dart';
 import '../../utils/validators.dart';
 
 class ForgetPasswordScreen extends StatelessWidget {
-  ForgetPasswordScreen({super.key});
+  const ForgetPasswordScreen({super.key});
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   void _submit(BuildContext context) {

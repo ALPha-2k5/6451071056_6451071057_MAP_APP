@@ -1,4 +1,4 @@
-import 'package:thuchanh/screens/shipping_address/my_shipping_address_screen.dart';
+import 'package:thuc_hanh/screens/shipping_address/my_shipping_address_screen.dart';
 import 'package:flutter/material.dart';
 import '../../common/styles/app_colors.dart';
 import '../../common/styles/app_text_styles.dart';
@@ -6,7 +6,7 @@ import '../../common/widgets/profile_menu_item.dart';
 import '../../routes/app_routes.dart';
 import '../bank_account/my_bank_account_screen.dart';
 import 'package:get/get.dart';
-import 'package:thuchanh/controller/login_controller.dart';
+import 'package:thuc_hanh/controller/login_controller.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

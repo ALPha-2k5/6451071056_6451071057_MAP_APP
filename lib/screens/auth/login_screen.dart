@@ -1,4 +1,4 @@
-import 'package:draf_project/controller/login_controller.dart';
+import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../common/widgets/primary_button.dart';

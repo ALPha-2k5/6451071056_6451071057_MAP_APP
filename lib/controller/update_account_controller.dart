@@ -1,9 +1,9 @@
-import 'package:thuchanh/controller/login_controller.dart';
+import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:thuchanh/controller/login_controller.dart';
+import 'package:thuc_hanh/controller/login_controller.dart';
 import '../data/services/update_account_service.dart';
 import 'package:get/get.dart';
-import 'package:thuchanh/controller/login_controller.dart';
+import 'package:thuc_hanh/controller/login_controller.dart';
 
 class UpdateAccountController extends GetxController {
   final UpdateAccountService _service = UpdateAccountService();

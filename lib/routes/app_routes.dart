@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:thuchanh/screens/auth/forget_password_screen.dart';
-import 'package:thuchanh/screens/auth/login_screen.dart';
-import 'package:thuchanh/screens/auth/register_screen.dart';
-import 'package:thuchanh/screens/auth/register_success_screen.dart';
-import 'package:thuchanh/screens/auth/reset_email_sent_screen.dart';
-import 'package:thuchanh/screens/auth/verify_email_screen.dart';
-import 'package:thuchanh/screens/onboarding/onboarding_screen.dart';
-import 'package:thuchanh/screens/splash/splash_screen.dart';
+
+// Auth Screens
+import 'package:thuc_hanh/screens/auth/forget_password_screen.dart';
+import 'package:thuc_hanh/screens/auth/login_screen.dart';
+import 'package:thuc_hanh/screens/auth/register_screen.dart';
+import 'package:thuc_hanh/screens/auth/register_success_screen.dart';
+import 'package:thuc_hanh/screens/auth/reset_email_sent_screen.dart';
+import 'package:thuc_hanh/screens/auth/verify_email_screen.dart';
+
+// Profile Screens
+import 'package:thuc_hanh/screens/profile/change_dateofbirth_screen.dart';
+import 'package:thuc_hanh/screens/profile/change_email_screen.dart';
+import 'package:thuc_hanh/screens/profile/change_gender_screen.dart';
+import 'package:thuc_hanh/screens/profile/change_name_screen.dart';
+import 'package:thuc_hanh/screens/profile/change_password_screen.dart';
+import 'package:thuc_hanh/screens/profile/change_phonenumber_screen.dart';
+import 'package:thuc_hanh/screens/profile/change_username_screen.dart';
+import 'package:thuc_hanh/screens/profile/update_account_screen.dart';
+
+// Other Screens
+import 'package:thuc_hanh/screens/bank_account/my_bank_account_screen.dart';
+import 'package:thuc_hanh/screens/onboarding/onboarding_screen.dart';
+import 'package:thuc_hanh/screens/shipping_address/my_shipping_address_screen.dart';
 import '../screens/home/main_navigation_screen.dart';
+import '../screens/splash/splash_screen.dart';
 
 class AppRoutes {
+  // Route Name Constants
   static const String splash = '/';
   static const String onboarding = '/onboarding';
   static const String login = '/login';
@@ -34,20 +51,38 @@ class AppRoutes {
   static const String myOrderview = '/my-order';
   static const String myShippingAddressview = '/my_shipping_address';
   static const String myBankAccountview = '/my_bank_account';
+
+  // Route Map
   static Map<String, WidgetBuilder> routes = {
     splash: (context) => const SplashScreen(),
     onboarding: (context) => const OnboardingScreen(),
     home: (context) => const MainNavigationScreen(),
-    register: (context) => const RegisterScreen(),
     login: (context) => const LoginScreen(),
+    register: (context) => const RegisterScreen(),
     forgetPassword: (context) => ForgetPasswordScreen(),
+    registerSuccess: (context) => const RegisterSuccessScreen(),
+
+    // Profile related
+    updateAccount: (context) => const UpdateAccountScreen(),
+    changeName: (context) => const ChangeNameScreen(),
+    changeUsername: (context) => const ChangeUsernameScreen(),
+    changePassword: (context) => const ChangePasswordScreen(),
+    changeEmail: (context) => const ChangeEmailScreen(),
+    changePhoneNumber: (context) => const ChangePhoneNumberScreen(),
+    changeGender: (context) => const ChangeGenderScreen(),
+    changeDateofBirth: (context) => const ChangeDateOfBirthScreen(),
+
+    // Address & Bank
+    myShippingAddressview: (context) => MyShippingAddressScreen(),
+    myBankAccountview: (context) => MyBankAccountScreen(),
+
+    // Routes with Arguments
     verifyEmail: (context) {
       final String email = ModalRoute.of(context)!.settings.arguments as String;
       return VerifyEmailScreen(email: email);
     },
-    registerSuccess: (context) => const RegisterSuccessScreen(),
     resetEmailSent: (context) {
-      final email = ModalRoute.of(context)!.settings.arguments as String;
+      final String email = ModalRoute.of(context)!.settings.arguments as String;
       return ResetEmailSentScreen(email: email);
     },
   };
