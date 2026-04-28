@@ -206,7 +206,7 @@ class ProfileScreen extends StatelessWidget {
             await authController.logout();
             Navigator.pushNamedAndRemoveUntil(
               context,
-              AppRoutes().home,
+              AppRoutes.home,
               (route) => false,
             );
           }
