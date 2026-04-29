@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../common/widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
 import '../../utils/validators.dart';
@@ -7,16 +8,43 @@ class ForgetPasswordScreen extends StatelessWidget {
   ForgetPasswordScreen({super.key});
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
-  void _submit(BuildContext context) {
+  Future<void> _submit(BuildContext context) async {
     final bool isValid = formKey.currentState!.validate();
     if (!isValid) {
       return;
     }
-    Navigator.pushNamed(
-      context,
-      AppRoutes.resetEmailSent,
-      arguments: emailController.text,
-    );
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: emailController.text.trim(),
+      );
+      if (context.mounted) {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.resetEmailSent,
+          arguments: emailController.text.trim(),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      final String message;
+      if (e.code == 'user-not-found') {
+        message = 'Email khong ton tai';
+      } else if (e.code == 'invalid-email') {
+        message = 'Email khong hop le';
+      } else if (e.code == 'too-many-requests') {
+        message = 'Thu lai sau';
+      } else {
+        message = 'Gui email that bai';
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   @override
