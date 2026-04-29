@@ -29,19 +29,18 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
-  firebase_core: ^4.7.0
-  firebase_auth: ^6.4.0
-  cloud_firestore: ^6.3.0
-  shared_preferences: ^2.5.5
 flutter_launcher_icons:
-android: true
-ios: true
-image_path: "assets/images/logos/t-store-splash-logo-white.png"
-# The following section is specific to Flutter packages
+  android: true
+  ios: true
+  image_path: "assets/images/logos/t-store-splash-logo-white.png"
+
 # The following section is specific to Flutter packages.
 flutter:
-assets:
-- assets/images/logos/
-- assets/images/on_boarding_images/
-- assets/images/animations/
-- assets/images/banners/
+  uses-material-design: true
+  assets:
+    - assets/
+    - assets/images/
+    - assets/images/logos/
+    - assets/images/on_boarding_images/
+    - assets/images/animations/
+    - assets/images/banners/

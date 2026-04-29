@@ -8,8 +8,8 @@ class SplashController extends GetxController {
     _startTimer();
   }
 
-  void _startTimer() async {
-    await Future.delayed(Duration(seconds: 2));
+  Future<void> _startTimer() async {
+    await Future.delayed(const Duration(seconds: 5));
     Get.offAllNamed(AppRoutes.onboarding);
   }
 }

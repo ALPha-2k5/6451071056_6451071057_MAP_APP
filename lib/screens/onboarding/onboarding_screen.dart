@@ -59,6 +59,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             page.imagePath,
                             height: 220,
                             fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  height: 220,
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 52,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                           ),
                           const SizedBox(height: 32),
                           Text(
