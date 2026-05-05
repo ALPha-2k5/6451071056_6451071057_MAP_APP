@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import '../../controller/product_controller.dart';
 import '../review/review_rating_screen.dart';
 import '../../controller/order_controller.dart';
+import '../../utils/currency.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -156,7 +157,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "\$${product.price.toStringAsFixed(0)}",
+                          formatVnd(product.price),
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,

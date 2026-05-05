@@ -5,6 +5,7 @@ import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:thuc_hanh/controller/wishlist_controller.dart';
 import '../../data/models/product_model.dart';
 import '../../screens/product/product_detail_screen.dart';
+import '../../utils/currency.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -20,11 +21,22 @@ class ProductCard extends StatelessWidget {
     // Logic kiểm tra trạng thái
     final bool isOutOfStock = product.isOutOfStock == true || product.stock <= 0;
     final bool hasDiscount = product.salePrice != null && product.salePrice! > 0;
-    
-    // Tính toán giá gốc dựa trên % giảm giá (nếu salePrice là số phần trăm)
-    final double originalPrice = hasDiscount 
-        ? product.price / (1 - (product.salePrice! / 100)) 
-        : product.price;
+
+    double? originalPrice;
+    if (hasDiscount) {
+      final sp = product.salePrice!;
+      if (sp > 0 && sp <= 100) {
+        // treat as percent
+        if (sp >= 100) {
+          originalPrice = product.price + sp;
+        } else {
+          originalPrice = product.price / (1 - (sp / 100));
+        }
+      } else {
+        // treat as absolute discount
+        originalPrice = product.price + sp;
+      }
+    }
 
     return InkWell(
       onTap: () => Get.to(() => ProductDetailScreen(productId: product.id)),
@@ -183,24 +195,25 @@ class ProductCard extends StatelessWidget {
   }
 
   // Dòng hiển thị giá
-  Widget _buildPriceRow(bool hasDiscount, double currentPrice, double originalPrice) {
+  Widget _buildPriceRow(bool hasDiscount, double currentPrice, double? originalPrice) {
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          "\$${currentPrice.toStringAsFixed(0)}",
+          formatVnd(currentPrice),
           style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 15),
         ),
         if (hasDiscount) ...[
           const SizedBox(width: 4),
-          Text(
-            "\$${originalPrice.toStringAsFixed(0)}",
-            style: TextStyle(
-              decoration: TextDecoration.lineThrough,
-              color: Colors.grey[400],
-              fontSize: 10,
+          if (originalPrice != null)
+            Text(
+              formatVnd(originalPrice),
+              style: TextStyle(
+                decoration: TextDecoration.lineThrough,
+                color: Colors.grey[400],
+                fontSize: 10,
+              ),
             ),
-          ),
         ],
       ],
     );

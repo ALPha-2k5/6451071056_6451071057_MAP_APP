@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thuc_hanh/controller/order_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../utils/currency.dart';
 import '../../data/models/order_model.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -297,7 +298,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         ),
                       ),
                       Text(
-                        "\$${order.totalAmount.toStringAsFixed(0)}",
+                        formatVnd(order.totalAmount),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -488,7 +489,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           ),
           Text(
-            "\$${item.price}",
+            formatVnd(item.price),
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -541,7 +542,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
           Text(
-            "${isDiscount ? '-' : ''}\$${value.abs().toStringAsFixed(0)}",
+            "${isDiscount ? '-' : ''}${formatVnd(value.abs())}",
             style: TextStyle(
               color: isDiscount ? Colors.red : Colors.black87,
               fontWeight: isDiscount ? FontWeight.bold : FontWeight.normal,

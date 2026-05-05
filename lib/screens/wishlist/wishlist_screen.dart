@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:thuc_hanh/routes/app_routes.dart';
 import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:thuc_hanh/controller/wishlist_controller.dart';
+import '../../utils/currency.dart';
 import 'package:thuc_hanh/data/models/product_model.dart';
 
 class WishlistScreen extends StatefulWidget {
@@ -359,7 +360,7 @@ class _WishlistProductCard extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      "\$${product.price.toStringAsFixed(0)}",
+                      formatVnd(product.price),
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 16,

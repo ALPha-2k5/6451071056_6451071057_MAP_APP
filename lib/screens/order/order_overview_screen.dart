@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/order_controller.dart';
+import '../../utils/currency.dart';
 import '../../controller/cart_controller.dart';
 
 class OrderReviewScreen extends StatefulWidget {
@@ -132,7 +133,7 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Text(
-                                  item.title ?? "Tên sản phẩm",
+                                  item.title,
                                   style: const TextStyle(
                                     color: Colors.black87,
                                     fontWeight: FontWeight.w500,
@@ -512,8 +513,8 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
         ),
         Text(
           value < 0
-              ? "- \$${(value.abs()).toStringAsFixed(0)}"
-              : "\$${value.toStringAsFixed(0)}",
+              ? "- ${formatVnd(value.abs())}"
+              : "${formatVnd(value)}",
           style: TextStyle(
             fontSize: fontSize,
             color: color ?? (bold ? Colors.black : Colors.black),
