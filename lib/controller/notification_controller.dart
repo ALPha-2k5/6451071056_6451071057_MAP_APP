@@ -45,4 +45,24 @@ class NotificationController extends GetxController {
     }).toList();
     unreadCount.value = notifications.where((n) => !n.isRead).length;
   }
+
+  /// đánh dấu tất cả đã đọc
+  Future<void> markAllAsRead() async {
+    final unread = notifications.where((n) => !n.isRead).toList();
+    for (final noti in unread) {
+      await _service.markAsRead(noti.id);
+    }
+    notifications.value = notifications
+        .map((n) => NotificationModel(
+              id: n.id,
+              userId: n.userId,
+              orderId: n.orderId,
+              orderStatus: n.orderStatus,
+              message: n.message,
+              isRead: true,
+              createdAt: n.createdAt,
+            ))
+        .toList();
+    unreadCount.value = 0;
+  }
 }

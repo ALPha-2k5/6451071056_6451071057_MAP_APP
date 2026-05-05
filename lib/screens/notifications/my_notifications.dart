@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:thuc_hanh/data/models/order_model.dart';
-import 'package:thuc_hanh/screens/order/ordered_detail_screen.dart';
+import '../../data/models/order_model.dart';
 import '../../controller/notification_controller.dart';
+import '../order/ordered_detail_screen.dart';
 
 class MyNotificationScreen extends StatelessWidget {
   MyNotificationScreen({super.key});
@@ -25,7 +25,7 @@ class MyNotificationScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => controller.markAllAsRead(), // Giả định bạn có hàm này
+            onPressed: () => controller.markAllAsRead(),
             child: const Text("Đọc hết", style: TextStyle(color: Colors.blue)),
           ),
         ],
@@ -56,27 +56,35 @@ class MyNotificationScreen extends StatelessWidget {
     // 1. Đánh dấu đã đọc
     await controller.markAsRead(noti);
 
-    // 2. Hiển thị Loading indicator nếu cần
-    Get.showOverlay(
-      asyncFunction: () async {
-        final orderDoc = await FirebaseFirestore.instance
-            .collection('orders')
-            .where('id', isEqualTo: noti.orderId)
-            .limit(1)
-            .get();
-
-        if (orderDoc.docs.isNotEmpty) {
-          final data = orderDoc.docs.first.data();
-          data['docId'] = orderDoc.docs.first.id;
-          final order = OrderModel.fromJson(data);
-          
-          Get.to(() => OrderDetailScreen(order: order));
-        } else {
-          Get.snackbar("Lỗi", "Không tìm thấy thông tin đơn hàng");
-        }
-      },
-      loadingWidget: const Center(child: CircularProgressIndicator()),
+    // 2. Hiển thị loading
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
     );
+
+    try {
+      final orderDoc = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('id', isEqualTo: noti.orderId)
+          .limit(1)
+          .get();
+
+      Get.back(); // Đóng loading
+
+      if (orderDoc.docs.isNotEmpty) {
+        final data = Map<String, dynamic>.from(orderDoc.docs.first.data());
+        data['docId'] = orderDoc.docs.first.id;
+        final order = OrderModel.fromJson(data);
+        Get.to(() => OrderDetailScreen(order: order));
+      } else {
+        Get.snackbar("Lỗi", "Không tìm thấy thông tin đơn hàng",
+            snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.back(); // Đóng loading khi lỗi
+      Get.snackbar("Lỗi", "Đã xảy ra lỗi: $e",
+          snackPosition: SnackPosition.BOTTOM);
+    }
   }
 }
 

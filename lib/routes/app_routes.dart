@@ -19,11 +19,12 @@ import 'package:thuc_hanh/screens/profile/change_phonenumber_screen.dart';
 import 'package:thuc_hanh/screens/profile/change_username_screen.dart';
 import 'package:thuc_hanh/screens/profile/update_account_screen.dart';
 import
-'package:thuc_hanh/screens/shipping_address/my_shipping_address_screen.dar
-t';
+'package:thuc_hanh/screens/shipping_address/my_shipping_address_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:thuc_hanh/screens/shipping_address/my_shipping_address_screen.dart';
+import 'package:thuc_hanh/screens/splash/splash_screen.dart';
 import '../screens/home/main_navigation_screen.dart';
-import '../screens/spalsh/splash_screen.dart';
+import '../screens/splash/splash_screen.dart';
 class AppRoutes {
 static const String splash = '/';
 static const String onboarding = '/onboarding';
