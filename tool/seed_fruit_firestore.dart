@@ -73,26 +73,40 @@ Future<void> _writeCollection(
   String collectionName,
   List<Map<String, dynamic>> records,
 ) async {
-  final batch = firestore.batch();
+  final collectionRef = firestore.collection(collectionName);
 
   for (final record in records) {
-    final id = record['id'] as String;
+    final idRaw = record['id'];
     final data = Map<String, dynamic>.from(record)..remove('id');
-    batch.set(firestore.collection(collectionName).doc(id), data);
+
+    if (idRaw is String && idRaw.isNotEmpty) {
+      await collectionRef.doc(idRaw).set(data);
+    } else {
+      final docRef = await collectionRef.add(data);
+      stdout.writeln('Created doc ${docRef.id} in $collectionName');
+    }
   }
 
-  await batch.commit();
   stdout.writeln('Wrote ${records.length} docs to $collectionName');
 }
 
 String? _readArg(List<String> args, String name) {
-  for (final arg in args) {
-    if (arg == name) {
-      return '';
-    }
+  for (var i = 0; i < args.length; i++) {
+    final arg = args[i];
+
     if (arg.startsWith('$name=')) {
       return arg.substring(name.length + 1);
     }
+
+    if (arg == name) {
+      // Support `--flag value` form. Return next arg if it exists and
+      // doesn't look like another flag.
+      if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
+        return args[i + 1];
+      }
+      return null;
+    }
   }
+
   return null;
 }
