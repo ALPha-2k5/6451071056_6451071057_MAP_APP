@@ -35,12 +35,35 @@ class BrandCard extends StatelessWidget {
             /// Brand Image
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                imageUrl,
-                height: 60,
-                width: 60,
-                fit: BoxFit.cover,
-              ),
+              child: imageUrl.trim().isEmpty
+                  ? Container(
+                      height: 60,
+                      width: 60,
+                      color: Colors.blue.shade50,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.store,
+                        color: Colors.blue.shade300,
+                        size: 28,
+                      ),
+                    )
+                  : Image.network(
+                      imageUrl,
+                      height: 60,
+                      width: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 60,
+                        width: 60,
+                        color: Colors.blue.shade50,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.store,
+                          color: Colors.blue.shade300,
+                          size: 28,
+                        ),
+                      ),
+                    ),
             ),
             const SizedBox(height: 12),
 

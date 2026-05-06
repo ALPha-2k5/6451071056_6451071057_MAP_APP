@@ -21,9 +21,12 @@ class MyStoreService {
     final snapshot = await _db
         .collection('categories')
         .where('isActive', isEqualTo: true)
-        .orderBy('priority')
         .get();
-    return snapshot.docs.map((e) => CategoryModel.fromSnapshot(e)).toList();
+
+    final categories =
+        snapshot.docs.map((e) => CategoryModel.fromSnapshot(e)).toList();
+    categories.sort((a, b) => a.priority.compareTo(b.priority));
+    return categories;
   }
 
   /// 3. Brand by Category (N-N table)

@@ -156,7 +156,32 @@ class HomeScreen extends StatelessWidget {
       height: 90,
       child: Obx(() {
         if (categoryController.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: Colors.white));
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: 6,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (_, index) => Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: index.isEven ? 38 : 52,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
         return ListView.builder(
           scrollDirection: Axis.horizontal,

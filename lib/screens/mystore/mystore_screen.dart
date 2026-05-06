@@ -17,9 +17,7 @@ class MystoreScreen extends StatelessWidget {
       backgroundColor: Colors.grey[50], // Đồng bộ màu nền xám nhẹ
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.blueAccent),
-          );
+          return _buildLoadingSkeleton();
         }
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -114,6 +112,92 @@ class MystoreScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildLoadingSkeleton() {
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      children: [
+        Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.blue.shade700, Colors.blue.shade400],
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
+            ),
+          ),
+          child: const SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  _SkeletonBox(width: 120, height: 22, radius: 8),
+                  Spacer(),
+                  _SkeletonCircle(size: 32),
+                  SizedBox(width: 10),
+                  _SkeletonCircle(size: 32),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: _SkeletonBox(width: 180, height: 18, radius: 8),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: 6,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (_, __) => const _BrandSkeletonCard(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 48,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: 5,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (_, __) => const _SkeletonBox(width: 96, height: 32, radius: 16),
+          ),
+        ),
+        const SizedBox(height: 18),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: _SkeletonBox(width: 150, height: 18, radius: 8),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 6,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.78,
+            ),
+            itemBuilder: (_, __) => const _ProductSkeletonCard(),
+          ),
+        ),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
   /// Nút bấm trên Header mờ mờ đồng bộ
   Widget _buildHeaderIcon(IconData icon, VoidCallback onTap) {
     return GestureDetector(
@@ -204,9 +288,25 @@ class MystoreScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 25,
                       backgroundColor: Colors.blue.shade50,
-                      backgroundImage: brand.imageUrl != null
-                          ? NetworkImage(brand.imageUrl!)
-                          : null,
+                      child: ClipOval(
+                        child: brand.imageUrl.trim().isEmpty
+                            ? Icon(
+                                Icons.store,
+                                color: Colors.blue.shade300,
+                                size: 24,
+                              )
+                            : Image.network(
+                                brand.imageUrl,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.store,
+                                  color: Colors.blue.shade300,
+                                  size: 24,
+                                ),
+                              ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -393,6 +493,96 @@ class MystoreScreen extends StatelessWidget {
         delegate: SliverChildBuilderDelegate(
           (_, index) => ProductCard(product: controller.products[index]),
           childCount: controller.products.length,
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  final double width;
+  final double height;
+  final double radius;
+
+  const _SkeletonBox({required this.width, required this.height, required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.shade100,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+    );
+  }
+}
+
+class _SkeletonCircle extends StatelessWidget {
+  final double size;
+
+  const _SkeletonCircle({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.22),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _BrandSkeletonCard extends StatelessWidget {
+  const _BrandSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 100,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _SkeletonCircle(size: 50),
+          SizedBox(height: 8),
+          _SkeletonBox(width: 56, height: 10, radius: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductSkeletonCard extends StatelessWidget {
+  const _ProductSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SkeletonBox(width: double.infinity, height: 110, radius: 16),
+            SizedBox(height: 12),
+            _SkeletonBox(width: 110, height: 12, radius: 8),
+            SizedBox(height: 8),
+            _SkeletonBox(width: 70, height: 12, radius: 8),
+          ],
         ),
       ),
     );
