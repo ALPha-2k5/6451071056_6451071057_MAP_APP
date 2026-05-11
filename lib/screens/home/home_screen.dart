@@ -6,6 +6,7 @@ import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:thuc_hanh/controller/notification_controller.dart';
 import 'package:thuc_hanh/controller/product_controller.dart';
 import '../../common/widgets/home_banner_slider.dart';
+import '../../common/widgets/network_image_with_fallback.dart';
 import '../../common/widgets/product_card.dart';
 import '../cart/cart_overview_screen.dart';
 import '../notifications/my_notifications.dart';
@@ -200,7 +201,14 @@ class HomeScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.white24,
-                      backgroundImage: NetworkImage(category.imageURL),
+                      child: ClipOval(
+                        child: NetworkImageWithFallback(
+                          imageUrl: category.imageURL,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(

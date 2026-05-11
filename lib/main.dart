@@ -8,14 +8,22 @@ import 'app/app.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'controller/login_controller.dart';
+import 'firebase_options.dart';
+
 void main() async {
-WidgetsFlutterBinding.ensureInitialized();
-await Firebase.initializeApp();
-Get.put(AuthController());
-Get.put(NotificationController());
-Get.put(CartController());
-Get.put(OrderController());
-Get.put(WishlistController());
-Get.put(SettingsController());
-runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase init error: $e');
+  }
+  Get.put(AuthController());
+  Get.put(NotificationController());
+  Get.put(CartController());
+  Get.put(OrderController());
+  Get.put(WishlistController());
+  Get.put(SettingsController());
+  runApp(MyApp());
 }

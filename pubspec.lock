@@ -154,7 +154,7 @@ packages:
     source: hosted
     version: "7.0.1"
   firebase_admin_sdk:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: firebase_admin_sdk
       sha256: "3827a3b30f3e76e9502cafab6fb6be28b29c632e83475b6ce3f146b5e077baad"

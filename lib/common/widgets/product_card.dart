@@ -4,6 +4,7 @@ import 'package:thuc_hanh/controller/cart_controller.dart';
 import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:thuc_hanh/controller/wishlist_controller.dart';
 import '../../data/models/product_model.dart';
+import 'network_image_with_fallback.dart';
 import '../../screens/product/product_detail_screen.dart';
 import '../../utils/currency.dart';
 
@@ -64,13 +65,9 @@ class ProductCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   child: AspectRatio(
                     aspectRatio: 1.0,
-                    child: Image.network(
-                      product.thumbnail,
+                    child: NetworkImageWithFallback(
+                      imageUrl: product.thumbnail,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey[100],
-                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                      ),
                     ),
                   ),
                 ),
