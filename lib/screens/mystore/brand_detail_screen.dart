@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../common/widgets/network_image_with_fallback.dart';
 import '../../common/widgets/product_card.dart';
 import '../../controller/brand_controller.dart';
 
 class BrandDetailScreen extends StatefulWidget {
   final String brandId;
   final String brandName;
+
   const BrandDetailScreen({
     super.key,
     required this.brandId,
     required this.brandName,
   });
+
   @override
   State<BrandDetailScreen> createState() => _BrandDetailScreenState();
 }
 
 class _BrandDetailScreenState extends State<BrandDetailScreen> {
   late AllBrandController controller;
-// Cấu hình filter để đồng bộ với các màn hình trước
+
   final Map<String, String> _filterMap = {
     'Tên A-Z': 'name',
     'Giá thấp → cao': 'low_price',
     'Giá cao → thấp': 'high_price',
   };
+
   @override
   void initState() {
     super.initState();
@@ -44,10 +49,10 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
             ),
           );
         }
+
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            /// 1. APPBAR GRADIENT NHẤT QUÁN
             SliverAppBar(
               pinned: true,
               expandedHeight: 100,
@@ -73,14 +78,14 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                 ),
               ),
             ),
-
-            /// 2. BRAND PROFILE CARD (LÀM MỚI SINH ĐỘNG)
             SliverToBoxAdapter(
               child: Obx(() {
-                final brand = controller.brands.firstWhereOrNull(
-                  (b) => b.id == widget.brandId,
-                );
-                if (brand == null) return const SizedBox();
+                final brandList = controller.brands.where((b) => b.id == widget.brandId).toList();
+                if (brandList.isEmpty) {
+                  return const SizedBox();
+                }
+                final brand = brandList.first;
+
                 return Container(
                   margin: const EdgeInsets.fromLTRB(16, 20, 16, 10),
                   padding: const EdgeInsets.all(20),
@@ -97,7 +102,6 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                   ),
                   child: Row(
                     children: [
-                      /// Logo với hiệu ứng viền
                       Container(
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
@@ -110,21 +114,23 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                         child: CircleAvatar(
                           radius: 35,
                           backgroundColor: Colors.blue[50],
-                          backgroundImage: brand.imageUrl != null
-                              ? NetworkImage(brand.imageUrl!)
-                              : null,
-                          child: brand.imageUrl == null
-                              ? Icon(
-                                  Icons.store,
-                                  size: 35,
-                                  color: Colors.blue.shade300,
-                                )
-                              : null,
+                          child: ClipOval(
+                            child: brand.imageUrl.trim().isEmpty
+                                ? Icon(
+                                    Icons.store,
+                                    size: 35,
+                                    color: Colors.blue.shade300,
+                                  )
+                                : NetworkImageWithFallback(
+                                    imageUrl: brand.imageUrl,
+                                    width: 70,
+                                    height: 70,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 20),
-
-                      /// Thông tin Brand
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +167,7 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                "${controller.brandProducts.length} sản phẩm",
+                                '${controller.brandProducts.length} sản phẩm',
                                 style: TextStyle(
                                   color: Colors.blue.shade700,
                                   fontSize: 12,
@@ -177,8 +183,6 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                 );
               }),
             ),
-
-            /// 3. FILTER CHIPS (THAY THẾ DROPDOWN)
             SliverToBoxAdapter(
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -216,7 +220,7 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                                   : Colors.grey.shade200,
                             ),
                           ),
-                          onSelected: (bool selected) {
+                          onSelected: (selected) {
                             if (selected) {
                               controller.sortBrandProducts(
                                 _filterMap[filterName]!,
@@ -230,8 +234,6 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                 ),
               ),
             ),
-
-            /// 4. GRID PRODUCT NHẤT QUÁN
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               sliver: SliverGrid(
@@ -239,8 +241,7 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio:
-                      0.65, // Khớp hoàn toàn với HomeScreen & PopularScreen
+                  childAspectRatio: 0.65,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final product = controller.brandProducts[index];
@@ -248,8 +249,6 @@ class _BrandDetailScreenState extends State<BrandDetailScreen> {
                 }, childCount: controller.brandProducts.length),
               ),
             ),
-
-            /// Khoảng trống cuối trang
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
         );

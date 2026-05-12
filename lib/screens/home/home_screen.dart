@@ -6,6 +6,7 @@ import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:thuc_hanh/controller/notification_controller.dart';
 import 'package:thuc_hanh/controller/product_controller.dart';
 import '../../common/widgets/home_banner_slider.dart';
+import '../../common/widgets/network_image_with_fallback.dart';
 import '../../common/widgets/product_card.dart';
 import '../cart/cart_overview_screen.dart';
 import '../notifications/my_notifications.dart';
@@ -156,7 +157,32 @@ class HomeScreen extends StatelessWidget {
       height: 90,
       child: Obx(() {
         if (categoryController.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: Colors.white));
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: 6,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (_, index) => Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: index.isEven ? 38 : 52,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
         return ListView.builder(
           scrollDirection: Axis.horizontal,
@@ -175,7 +201,14 @@ class HomeScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.white24,
-                      backgroundImage: NetworkImage(category.imageURL),
+                      child: ClipOval(
+                        child: NetworkImageWithFallback(
+                          imageUrl: category.imageURL,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(

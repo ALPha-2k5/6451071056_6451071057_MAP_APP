@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:thuc_hanh/controller/login_controller.dart';
 import 'package:thuc_hanh/screens/auth/login_screen.dart';
 import '../../controller/cart_controller.dart';
+import '../../utils/currency.dart';
 import '../../data/models/cart_item_model.dart';
 import '../order/order_overview_screen.dart';
 
@@ -147,7 +148,7 @@ class _BottomCheckoutBar extends StatelessWidget {
                 children: [
                   const Text('Tổng thanh toán', style: TextStyle(color: Colors.grey, fontSize: 14)),
                   Text(
-                    '\$${cartController.totalPrice.toStringAsFixed(2)}',
+                    formatVnd(cartController.totalPrice),
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -296,7 +297,7 @@ class _CartItemTile extends StatelessWidget {
                       onDecrease: onDecrease,
                     ),
                     Text(
-                      '\$${total.toStringAsFixed(2)}',
+                      formatVnd(total),
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue.shade800),
                     ),
                   ],

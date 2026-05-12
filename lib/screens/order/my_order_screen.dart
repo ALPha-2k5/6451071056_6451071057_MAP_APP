@@ -2,6 +2,7 @@ import 'package:thuc_hanh/screens/order/ordered_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/order_controller.dart';
+import '../../utils/currency.dart';
 
 class MyOrderScreen extends StatefulWidget {
   const MyOrderScreen({super.key});
@@ -390,7 +391,7 @@ class _OrderHistoryCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '\$${total.toStringAsFixed(0)}',
+                        formatVnd(total),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,

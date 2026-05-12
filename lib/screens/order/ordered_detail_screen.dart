@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thuc_hanh/controller/order_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../utils/currency.dart';
 import '../../data/models/order_model.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -15,10 +16,15 @@ class OrderDetailScreen extends StatefulWidget {
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
   String phone = "";
   bool isLoadingPhone = true;
+  late Stream<DocumentSnapshot> _orderStream;
 
   @override
   void initState() {
     super.initState();
+    _orderStream = FirebaseFirestore.instance
+        .collection('orders')
+        .doc(widget.order.docId)
+        .snapshots();
     _fetchUserPhone();
   }
 
@@ -107,258 +113,295 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final order = widget.order;
-    final currentStep = _getStepIndex(order.orderStatus);
+    return StreamBuilder<DocumentSnapshot>(
+      stream: _orderStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(body: Center(child: Text("Lỗi: ${snapshot.error}")));
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB), // Nền xám rất nhẹ đồng bộ App
-      appBar: AppBar(
-        title: const Text(
-          "Chi tiết đơn hàng",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        foregroundColor: Colors.white,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.blue.shade700, Colors.blue.shade400],
+        final data = snapshot.data!.data() as Map<String, dynamic>?;
+        if (data == null) {
+          return const Scaffold(body: Center(child: Text("Đơn hàng không tồn tại")));
+        }
+
+        final order = OrderModel.fromJson({...data, 'docId': snapshot.data!.id});
+        final currentStep = _getStepIndex(order.orderStatus);
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8F9FB),
+          appBar: AppBar(
+            title: const Text(
+              "Chi tiết đơn hàng",
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// 1. MÃ ĐƠN HÀNG & TRẠNG THÁI CHUNG
-            Container(
-              padding: const EdgeInsets.all(20),
+            centerTitle: true,
+            elevation: 0,
+            foregroundColor: Colors.white,
+            flexibleSpace: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Mã đơn hàng",
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "#${order.id.toUpperCase()}",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _isSpecialStatus(order.orderStatus)
-                          ? Colors.red.shade50
-                          : Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _getStatusText(order.orderStatus),
-                      style: TextStyle(
-                        color: _isSpecialStatus(order.orderStatus)
-                            ? Colors.red
-                            : Colors.blue.shade700,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            /// 2. STEPPER TRẠNG THÁI ĐƠN HÀNG
-            const Text(
-              "Hành trình đơn hàng",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: _isSpecialStatus(order.orderStatus)
-                  ? _buildSpecialStatusUI(order.orderStatus)
-                  : _buildHorizontalStepper(currentStep),
-            ),
-            const SizedBox(height: 20),
-
-            /// 3. DANH SÁCH SẢN PHẨM
-            const Text(
-              "Sản phẩm",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ...order.products.map((item) => _buildProductCard(item)),
-            const SizedBox(height: 20),
-
-            /// 4. THÔNG TIN GIAO HÀNG & LIÊN HỆ
-            const Text(
-              "Thông tin nhận hàng",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  _buildInfoRow(
-                    Icons.location_on_outlined,
-                    "Địa chỉ",
-                    _buildAddress(order.shippingAddress),
-                  ),
-                  const Divider(height: 24),
-                  _buildInfoRow(
-                    Icons.phone_android_outlined,
-                    "Số điện thoại",
-                    isLoadingPhone ? "Đang tải..." : phone,
-                  ),
-                  const Divider(height: 24),
-                  _buildInfoRow(
-                    Icons.calendar_today_outlined,
-                    "Ngày giao dự kiến",
-                    _formatDate(order.shippingDate),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            /// 5. TỔNG KẾT THANH TOÁN
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  _priceSummaryRow("Tạm tính", order.subTotal),
-                  _priceSummaryRow(
-                    "Phí vận chuyển",
-                    order.shippingAmount.toDouble(),
-                  ),
-                  _priceSummaryRow("Thuế", order.taxAmount),
-                  if (order.couponDiscountAmount > 0)
-                    _priceSummaryRow(
-                      "Giảm giá",
-                      -order.couponDiscountAmount,
-                      isDiscount: true,
-                    ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(thickness: 1),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Tổng thanh toán",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "\$${order.totalAmount.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.account_balance_wallet_outlined,
-                          size: 20,
-                          color: Colors.blue,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          _getPaymentMethodText(order.paymentMethod),
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
-
-            /// 6. NÚT HỦY ĐƠN
-            if (order.orderStatus.toLowerCase() == "created")
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () => _confirmCancel(order),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    "Hủy đơn hàng",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.blue.shade700, Colors.blue.shade400],
                 ),
               ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+            ),
+          ),
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// 1. MÃ ĐƠN HÀNG & TRẠNG THÁI CHUNG
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Mã đơn hàng",
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "#${order.id.toUpperCase()}",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _isSpecialStatus(order.orderStatus)
+                              ? Colors.red.shade50
+                              : Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _getStatusText(order.orderStatus),
+                          style: TextStyle(
+                            color: _isSpecialStatus(order.orderStatus)
+                                ? Colors.red
+                                : Colors.blue.shade700,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                /// 2. STEPPER TRẠNG THÁI ĐƠN HÀNG
+                const Text(
+                  "Hành trình đơn hàng",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: _isSpecialStatus(order.orderStatus)
+                      ? _buildSpecialStatusUI(order.orderStatus)
+                      : _buildHorizontalStepper(currentStep),
+                ),
+                const SizedBox(height: 20),
+
+                /// 3. DANH SÁCH SẢN PHẨM
+                const Text(
+                  "Sản phẩm",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                ...order.products.map((item) => _buildProductCard(item)),
+                const SizedBox(height: 20),
+
+                /// 4. THÔNG TIN GIAO HÀNG & LIÊN HỆ
+                const Text(
+                  "Thông tin nhận hàng",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInfoRow(
+                        Icons.location_on_outlined,
+                        "Địa chỉ",
+                        _buildAddress(order.shippingAddress),
+                      ),
+                      const Divider(height: 24),
+                      _buildInfoRow(
+                        Icons.phone_android_outlined,
+                        "Số điện thoại",
+                        isLoadingPhone ? "Đang tải..." : phone,
+                      ),
+                      const Divider(height: 24),
+                      _buildInfoRow(
+                        Icons.calendar_today_outlined,
+                        "Ngày giao dự kiến",
+                        _formatDate(order.shippingDate),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                /// 5. TỔNG KẾT THANH TOÁN
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      _priceSummaryRow("Tạm tính", order.subTotal),
+                      _priceSummaryRow(
+                        "Phí vận chuyển",
+                        order.shippingAmount.toDouble(),
+                      ),
+                      _priceSummaryRow("Thuế", order.taxAmount),
+                      if (order.couponDiscountAmount > 0)
+                        _priceSummaryRow(
+                          "Giảm giá",
+                          -order.couponDiscountAmount,
+                          isDiscount: true,
+                        ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(thickness: 1),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Tổng thanh toán",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            formatVnd(order.totalAmount),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.account_balance_wallet_outlined,
+                              size: 20,
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              _getPaymentMethodText(order.paymentMethod),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+
+                /// 6. NÚT HỦY ĐƠN
+                if (order.orderStatus.toLowerCase() == "created")
+                  Obx(() {
+                    final orderController = Get.find<OrderController>();
+                    final isLoading = orderController.isLoadingOrders.value;
+
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : () => _confirmCancel(order),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.red),
+                                ),
+                              )
+                            : const Text(
+                                "Hủy đơn hàng",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    );
+                  }),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -488,7 +531,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           ),
           Text(
-            "\$${item.price}",
+            formatVnd(item.price),
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -541,7 +584,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
           Text(
-            "${isDiscount ? '-' : ''}\$${value.abs().toStringAsFixed(0)}",
+            "${isDiscount ? '-' : ''}${formatVnd(value.abs())}",
             style: TextStyle(
               color: isDiscount ? Colors.red : Colors.black87,
               fontWeight: isDiscount ? FontWeight.bold : FontWeight.normal,
@@ -568,38 +611,49 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             onPressed: () => Get.back(),
             child: const Text("Đóng", style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final orderController = Get.find<OrderController>();
-              await FirebaseFirestore.instance
-                  .collection('orders')
-                  .doc(order.docId)
-                  .update({
-                "orderStatus": "cancelled",
-                "updatedAt": DateTime.now(),
-              });
-              await orderController.revertSoldQuantity(order);
-              Get.back();
-              Get.back();
-              Get.snackbar(
-                "Thành công",
-                "Đơn hàng của bạn đã được hủy",
-                backgroundColor: Colors.green,
-                colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          Obx(() {
+            final orderController = Get.find<OrderController>();
+            final isLoading = orderController.isLoadingOrders.value;
+
+            return ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      // 1. Đóng dialog trước để tránh bị Get.back() đóng snackbar nhầm
+                      Navigator.of(context).pop();
+
+                      // 2. Gọi logic hủy
+                      final success = await orderController.cancelOrder(order);
+
+                      // 3. Nếu thành công và screen còn mounted thì quay lại trang trước
+                      if (success && mounted) {
+                        // Đợi thêm 1 chút để user đọc được thông báo trên màn hình hiện tại
+                        await Future.delayed(const Duration(seconds: 1));
+                        if (mounted) Navigator.of(context).pop();
+                      }
+
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
-            child: const Text(
-              "Xác nhận hủy",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 15,
+                      height: 15,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      "Xác nhận hủy",
+                      style: TextStyle(color: Colors.white),
+                    ),
+            );
+          }),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/order_controller.dart';
+import '../../utils/currency.dart';
 import '../../controller/cart_controller.dart';
 
 class OrderReviewScreen extends StatefulWidget {
@@ -132,7 +133,7 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Text(
-                                  item.title ?? "Tên sản phẩm",
+                                  item.title,
                                   style: const TextStyle(
                                     color: Colors.black87,
                                     fontWeight: FontWeight.w500,
@@ -356,41 +357,54 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    /// NÚT CHECKOUT
                     SizedBox(
                       width: double.infinity,
                       height: 55,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade700,
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          shadowColor: Colors.blue.withOpacity(0.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                      child: Obx(() {
+                        final isLoading = controller.isCreatingOrder.value;
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade700,
+                            foregroundColor: Colors.white,
+                            elevation: 2,
+                            shadowColor: Colors.blue.withOpacity(0.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
-                        ),
-                        onPressed: () async {
-                          if (controller.selectedAddress.value == null) {
-                            Get.snackbar(
-                              "Lỗi",
-                              "Vui lòng chọn địa chỉ giao hàng",
-                              backgroundColor: Colors.red.shade400,
-                              colorText: Colors.white,
-                            );
-                            return;
-                          }
-                          await controller.createOrder();
-                        },
-                        child: const Text(
-                          "XÁC NHẬN ĐẶT HÀNG",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
+                          onPressed: isLoading
+                              ? null
+                              : () async {
+                                  if (controller.selectedAddress.value == null) {
+                                    Get.snackbar(
+                                      "Lỗi",
+                                      "Vui lòng chọn địa chỉ giao hàng",
+                                      backgroundColor: Colors.red.shade400,
+                                      colorText: Colors.white,
+                                    );
+                                    return;
+                                  }
+                                  await controller.createOrder();
+                                },
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  "XÁC NHẬN ĐẶT HÀNG",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                        );
+                      }),
                     ),
                   ],
                 ),
@@ -512,8 +526,8 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
         ),
         Text(
           value < 0
-              ? "- \$${(value.abs()).toStringAsFixed(0)}"
-              : "\$${value.toStringAsFixed(0)}",
+              ? "- ${formatVnd(value.abs())}"
+              : "${formatVnd(value)}",
           style: TextStyle(
             fontSize: fontSize,
             color: color ?? (bold ? Colors.black : Colors.black),

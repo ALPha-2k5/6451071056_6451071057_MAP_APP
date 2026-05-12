@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
+import 'network_image_with_fallback.dart';
+
 class BrandCard extends StatelessWidget {
   final String imageUrl;
   final String brandName;
   final int productCount;
   final VoidCallback? onTap;
+
   const BrandCard({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.brandName,
     required this.productCount,
     this.onTap,
-  }) : super(key: key);
+  });
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -32,19 +36,28 @@ class BrandCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            /// Brand Image
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                imageUrl,
-                height: 60,
-                width: 60,
-                fit: BoxFit.cover,
-              ),
+              child: imageUrl.trim().isEmpty
+                  ? Container(
+                      height: 60,
+                      width: 60,
+                      color: Colors.blue.shade50,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.store,
+                        color: Colors.blue.shade300,
+                        size: 28,
+                      ),
+                    )
+                  : NetworkImageWithFallback(
+                      imageUrl: imageUrl,
+                      height: 60,
+                      width: 60,
+                      fit: BoxFit.cover,
+                    ),
             ),
             const SizedBox(height: 12),
-
-            /// Brand Name + Verified Icon
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -64,8 +77,6 @@ class BrandCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-
-            /// Product Count
             Text(
               '$productCount products',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
