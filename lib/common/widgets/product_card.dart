@@ -229,6 +229,11 @@ class ProductCard extends StatelessWidget {
               "${product.rating}",
               style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w500),
             ),
+            const SizedBox(width: 8),
+            Text(
+              "Đã bán ${product.soldQuantity}",
+              style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+            ),
           ],
         ),
         Obx(() {

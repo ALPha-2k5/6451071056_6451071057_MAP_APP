@@ -357,41 +357,54 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    /// NÚT CHECKOUT
                     SizedBox(
                       width: double.infinity,
                       height: 55,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade700,
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          shadowColor: Colors.blue.withOpacity(0.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                      child: Obx(() {
+                        final isLoading = controller.isCreatingOrder.value;
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade700,
+                            foregroundColor: Colors.white,
+                            elevation: 2,
+                            shadowColor: Colors.blue.withOpacity(0.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
-                        ),
-                        onPressed: () async {
-                          if (controller.selectedAddress.value == null) {
-                            Get.snackbar(
-                              "Lỗi",
-                              "Vui lòng chọn địa chỉ giao hàng",
-                              backgroundColor: Colors.red.shade400,
-                              colorText: Colors.white,
-                            );
-                            return;
-                          }
-                          await controller.createOrder();
-                        },
-                        child: const Text(
-                          "XÁC NHẬN ĐẶT HÀNG",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
+                          onPressed: isLoading
+                              ? null
+                              : () async {
+                                  if (controller.selectedAddress.value == null) {
+                                    Get.snackbar(
+                                      "Lỗi",
+                                      "Vui lòng chọn địa chỉ giao hàng",
+                                      backgroundColor: Colors.red.shade400,
+                                      colorText: Colors.white,
+                                    );
+                                    return;
+                                  }
+                                  await controller.createOrder();
+                                },
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  "XÁC NHẬN ĐẶT HÀNG",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                        );
+                      }),
                     ),
                   ],
                 ),

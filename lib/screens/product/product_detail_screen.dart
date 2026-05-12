@@ -28,7 +28,52 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   int quantity = 1;
   String? selectedImage;
-  final Map<String, int> selectedAttributes = {};
+  final selectedAttributes = <String, int>{}.obs;
+
+  double _parseVariationToMultiplier(String baseValue, String selectedValue) {
+    double getValue(String s) {
+      s = s.toLowerCase();
+
+      // 1. Handle explicit weights (kg, g, kilôgam, gam)
+      if (s.contains('kg') || s.contains('kilôgam')) {
+        final match = RegExp(r'(\d+(?:\.\d+)?)\s*(?:kg|kilôgam)').firstMatch(s);
+        if (match != null) return double.parse(match.group(1)!) * 1000;
+      }
+      if (s.contains('g') || s.contains('gam')) {
+        // Tránh nhầm "kg" chứa "g"
+        if (!s.contains('kg')) {
+          final match = RegExp(r'(\d+(?:\.\d+)?)\s*(?:g|gam)').firstMatch(s);
+          if (match != null) return double.parse(match.group(1)!);
+        }
+      }
+
+      // 2. Handle Vietnamese units (lạng = 100g)
+      if (s.contains('lạng')) {
+        final match = RegExp(r'(\d+(?:\.\d+)?)\s*lạng').firstMatch(s);
+        if (match != null) return double.parse(match.group(1)!) * 100;
+        return 100.0; // Mặc định 1 lạng
+      }
+
+      // 3. Handle categorical sizes (S, M, L, XL, XXL)
+      // Sử dụng word boundary \b để tránh khớp nhầm (ví dụ 'l' trong 'lạng')
+      if (RegExp(r'\bxxl\b').hasMatch(s)) return 2.0;
+      if (RegExp(r'\bxl\b').hasMatch(s)) return 1.5;
+      if (RegExp(r'\bl\b').hasMatch(s)) return 1.25;
+      if (RegExp(r'\bm\b').hasMatch(s)) return 1.0;
+      if (RegExp(r'\bs\b').hasMatch(s)) return 0.8;
+
+      // 4. Handle raw numbers (e.g. "Size 1", "Hộp 10 quả")
+      final match = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(s);
+      if (match != null) return double.parse(match.group(1)!);
+
+      return 1.0;
+    }
+
+    double base = getValue(baseValue);
+    double selected = getValue(selectedValue);
+    if (base == 0) return 1.0;
+    return selected / base;
+  }
 
   @override
   void initState() {
@@ -58,6 +103,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             product.stock <= 0 ||
             product.soldQuantity >= product.stock;
         final authController = Get.find<AuthController>();
+
+        double currentPrice = product.price;
+        if (product.attributes.isNotEmpty) {
+          dynamic weightAttr;
+          try {
+            weightAttr = product.attributes.firstWhere(
+              (a) => a.name.toLowerCase().contains('khối lượng') || 
+                     a.name.toLowerCase().contains('đóng gói') || 
+                     a.name.toLowerCase().contains('trọng lượng')
+            );
+          } catch (e) {
+            weightAttr = product.attributes.first;
+          }
+          if (weightAttr != null && weightAttr.values.isNotEmpty) {
+            int selectedIndex = selectedAttributes[weightAttr.name] ?? 0;
+            String baseValue = weightAttr.values[0].toString();
+            String selectedValue = weightAttr.values[selectedIndex].toString();
+            double multiplier = _parseVariationToMultiplier(baseValue, selectedValue);
+            currentPrice = product.price * multiplier;
+          }
+        }
 
         return Stack(
           children: [
@@ -153,7 +219,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          formatVnd(product.price),
+                          formatVnd(currentPrice),
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,
@@ -169,6 +235,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ...product.attributes.map(
                           (attribute) => _buildAttributeSection(attribute),
                         ),
+                        const SizedBox(height: 24),
+                        _buildReviewsPreview(product),
+                        const SizedBox(height: 24),
                         const Text(
                           'Mô tả sản phẩm',
                           style: TextStyle(
@@ -192,7 +261,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
               ],
             ),
-            if (!isOutOfStock) _buildBottomAction(product),
+            if (!isOutOfStock) _buildBottomAction(product, currentPrice),
           ],
         );
       }),
@@ -267,6 +336,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ' (${product.ratingCount})',
               style: TextStyle(color: Colors.orange.shade300, fontSize: 12),
             ),
+            const SizedBox(width: 8),
+            Container(width: 1, height: 12, color: Colors.orange.shade200),
+            const SizedBox(width: 8),
+            Text(
+              'Đã bán ${product.soldQuantity}',
+              style: TextStyle(
+                color: Colors.orange.shade400,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
@@ -294,7 +374,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget _buildAttributeSection(dynamic attribute) {
     final name = attribute.name as String;
     final values = attribute.values as List<dynamic>;
-    selectedAttributes.putIfAbsent(name, () => 0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,9 +391,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           spacing: 12,
           runSpacing: 12,
           children: List.generate(values.length, (index) {
-            final isSelected = selectedAttributes[name] == index;
+            final isSelected = (selectedAttributes[name] ?? 0) == index;
             return GestureDetector(
-              onTap: () => setState(() => selectedAttributes[name] = index),
+              onTap: () => selectedAttributes[name] = index,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -352,28 +431,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 20),
-          child: OutlinedButton.icon(
-            onPressed: () {
-              Get.to(
-                () => WriteReviewScreen(
-                  product: product,
-                  reviewId: data['reviewId'],
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Get.to(
+                  () => WriteReviewScreen(
+                    product: product,
+                    reviewId: data['reviewId'],
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.blue.shade700, width: 1.5),
               ),
-              side: BorderSide(color: Colors.blue.shade700),
-            ),
-            icon: Icon(
-              state == 'can_edit' ? Icons.edit : Icons.rate_review,
-              size: 18,
-            ),
-            label: Text(
-              state == 'can_edit' ? 'Chỉnh sửa đánh giá' : 'Viết đánh giá sản phẩm',
+              icon: Icon(
+                state == 'can_edit' ? Icons.edit : Icons.rate_review,
+                size: 20,
+              ),
+              label: Text(
+                state == 'can_edit' ? 'CHỈNH SỬA ĐÁNH GIÁ' : 'VIẾT ĐÁNH GIÁ SẢN PHẨM',
+                style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+              ),
             ),
           ),
         );
@@ -381,7 +464,113 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildBottomAction(dynamic product) {
+  Widget _buildReviewsPreview(dynamic product) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Đánh giá & Nhận xét',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            TextButton(
+              onPressed: () => Get.to(() => ReviewRatingScreen(
+                    productId: product.id,
+                    rating: product.rating.toDouble(),
+                    reviewCount: product.ratingCount,
+                  )),
+              child: const Text('Xem tất cả'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (product.ratingCount == 0)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Center(
+              child: Text(
+                'Sản phẩm chưa có đánh giá nào.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('reviews')
+                .where('productId', isEqualTo: product.id)
+                .where('isApproved', isEqualTo: true)
+                .where('isDeleted', isEqualTo: false)
+                .orderBy('createdAt', descending: true)
+                .limit(2)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox();
+              final docs = snapshot.data!.docs;
+              if (docs.isEmpty) return const SizedBox();
+
+              return Column(
+                children: docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 12,
+                              backgroundColor: Colors.blue.shade100,
+                              child: const Icon(Icons.person, size: 12, color: Colors.blue),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              data['userName'] ?? 'Người dùng',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            const Spacer(),
+                            Row(
+                              children: List.generate(5, (index) {
+                                return Icon(
+                                  index < (data['rating'] ?? 0) ? Icons.star : Icons.star_border,
+                                  size: 14,
+                                  color: Colors.amber,
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          data['reviewText'] ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBottomAction(dynamic product, double currentPrice) {
     return Positioned(
       bottom: 0,
       left: 0,
@@ -452,7 +641,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               productId: product.id,
                               quantity: quantity,
                               image: selectedImage,
-                              price: product.price,
+                              price: currentPrice,
                               title: product.title,
                               brandName: product.brandName,
                               selectedVariation: selectedVariation,

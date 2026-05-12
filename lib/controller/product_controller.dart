@@ -143,4 +143,11 @@ class ProductController extends GetxController {
       searchProducts(query);
     });
   }
+
+  Future<void> refreshProductData() async {
+    await Future.wait([
+      fetchPopularProducts(),
+      fetchAllPopularProducts(),
+    ]);
+  }
 }
