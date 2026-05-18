@@ -17,12 +17,16 @@ class OrderService {
     final snapshot = await _db
         .collection('orders')
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs.map((doc) {
+    
+    final orders = snapshot.docs.map((doc) {
       final data = doc.data();
       return OrderModel.fromJson({...data, 'docId': doc.id});
     }).toList();
+
+    // Sắp xếp thủ công để tránh lỗi index Firestore
+    orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return orders;
   }
 
   Future<bool> hasUserPurchasedProduct({

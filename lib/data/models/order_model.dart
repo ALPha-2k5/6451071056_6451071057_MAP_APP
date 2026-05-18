@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'cart_item_model.dart';
 import 'coupon_model.dart';
 import 'shipping_model.dart';
@@ -104,6 +105,14 @@ return {
 'paymentMethodType': paymentMethodType.name,
 };
 }
+static DateTime _parseDate(dynamic date) {
+  if (date == null) return DateTime.now();
+  if (date is DateTime) return date;
+  if (date is Timestamp) return date.toDate();
+  if (date is String) return DateTime.tryParse(date) ?? DateTime.now();
+  return DateTime.now();
+}
+
 factory OrderModel.fromJson(Map<String, dynamic> json) {
 return OrderModel(
 docId: json['docId'] ?? '',
@@ -113,7 +122,7 @@ userDeviceToken: '',products: (json['products'] as List)
 .map((e) => CartItemModel.fromJson(e))
 .toList(),
 subTotal: (json['subTotal'] ?? 0).toDouble(),
-shippingAmount: json['shippingAmount'] ?? 0,
+shippingAmount: (json['shippingAmount'] ?? 0).toInt(),
 taxRate: (json['taxRate'] ?? 0).toDouble(),
 taxAmount: (json['taxAmount'] ?? 0).toDouble(),
 coupon: json['coupon'] != null
@@ -126,16 +135,16 @@ totalDiscountAmount: (json['totalDiscountAmount'] ?? 0).toDouble(),
 totalAmount: (json['totalAmount'] ?? 0).toDouble(),
 paymentStatus: json['paymentStatus'],
 orderStatus: json['orderStatus'],
-orderDate: json['orderDate'].toDate(),
+orderDate: _parseDate(json['orderDate']),
 /// 🔥 FIX QUAN TRỌNG
 shippingDate: json['shippingDate'] != null
-? json['shippingDate'].toDate()
+? _parseDate(json['shippingDate'])
 : null,
 shippingAddress: json['shippingAddress'],
 activities: [],
 itemCount: json['itemCount'] ?? 0,
-createdAt: json['createdAt'].toDate(),
-updatedAt: json['updatedAt'].toDate(),
+createdAt: _parseDate(json['createdAt']),
+updatedAt: _parseDate(json['updatedAt']),
 paymentMethod: json['paymentMethod'] ?? '',
 paymentMethodType: json['paymentMethodType'] == 'bank'
 ? PaymentMethods.bank
