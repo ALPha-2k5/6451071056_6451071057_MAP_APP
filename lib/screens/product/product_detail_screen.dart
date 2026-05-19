@@ -9,6 +9,7 @@ import '../../controller/order_controller.dart';
 import '../../controller/product_controller.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../utils/currency.dart';
+import '../../utils/text_formatter.dart';
 import '../review/review_rating_screen.dart';
 import '../review/write_review_screen.dart';
 
@@ -247,7 +248,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          product.description ?? 'Không có mô tả cho sản phẩm này.',
+                          cleanProductDescription(product.description),
                           style: TextStyle(
                             color: Colors.grey.shade700,
                             height: 1.5,
