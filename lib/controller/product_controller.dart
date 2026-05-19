@@ -7,11 +7,13 @@ class ProductController extends GetxController {
   final ProductService _service = ProductService();
   var products = <ProductModel>[].obs;
   var popularProducts = <ProductModel>[].obs;
+  var newArrivalProducts = <ProductModel>[].obs;
   List<ProductModel> _originalPopularProducts = [];
   var isLoading = false.obs;
   @override
   void onInit() {
     fetchPopularProducts();
+    fetchNewArrivalProducts();
     super.onInit();
   }
 
@@ -144,10 +146,20 @@ class ProductController extends GetxController {
     });
   }
 
+  Future<void> fetchNewArrivalProducts() async {
+    try {
+      final result = await _service.getNewArrivals();
+      newArrivalProducts.assignAll(result);
+    } catch (e) {
+      print("Error loading new arrival products: $e");
+    }
+  }
+
   Future<void> refreshProductData() async {
     await Future.wait([
       fetchPopularProducts(),
       fetchAllPopularProducts(),
+      fetchNewArrivalProducts(),
     ]);
   }
 }

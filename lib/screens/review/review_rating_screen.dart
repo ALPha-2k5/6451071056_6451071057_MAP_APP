@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../../controller/login_controller.dart';
 
 class ReviewRatingScreen extends StatelessWidget {
   final String productId;
@@ -153,7 +155,7 @@ class ReviewRatingScreen extends StatelessWidget {
   }
 
   Widget _buildReviewList() {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = Get.isRegistered<AuthController>() ? Get.find<AuthController>().currentUser?.id : null;
     
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
