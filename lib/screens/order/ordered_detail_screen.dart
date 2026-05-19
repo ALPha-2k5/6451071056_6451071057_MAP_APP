@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../utils/currency.dart';
 import '../../data/models/order_model.dart';
+import '../../controller/login_controller.dart';
+import '../../data/models/product_model.dart';
+import '../review/write_review_screen.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final OrderModel order;
@@ -245,7 +248,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                ...order.products.map((item) => _buildProductCard(item)),
+                ...order.products.map((item) => _buildProductCard(item, order.orderStatus)),
                 const SizedBox(height: 20),
 
                 /// 4. THÔNG TIN GIAO HÀNG & LIÊN HỆ
@@ -489,58 +492,127 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildProductCard(dynamic item) {
+  Widget _buildProductCard(dynamic item, String orderStatus) {
+    final isDelivered = orderStatus.toLowerCase() == "delivered";
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              item.image,
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Số lượng: x${item.quantity}",
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            formatVnd(item.price),
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Colors.blue,
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  item.image ?? '',
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 70,
+                    height: 70,
+                    color: Colors.grey.shade100,
+                    child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Số lượng: x${item.quantity}",
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formatVnd(item.price),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (isDelivered) ...[
+            const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1)),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: () => _openReviewScreen(item),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.blue.shade700,
+                  side: BorderSide(color: Colors.blue.shade700),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                icon: const Icon(Icons.rate_review, size: 18),
+                label: const Text("Viết đánh giá", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
+  }
+
+  Future<void> _openReviewScreen(dynamic item) async {
+    Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+    try {
+      final doc = await FirebaseFirestore.instance.collection('products').doc(item.productId).get();
+      if (!doc.exists) {
+        Get.back();
+        Get.snackbar("Lỗi", "Sản phẩm không còn tồn tại");
+        return;
+      }
+      final product = ProductModel.fromSnapshot(doc, item.brandName);
+
+      final auth = Get.find<AuthController>();
+      final user = auth.currentUser;
+      String? existingReviewId;
+      if (user != null) {
+        final reviewSnapshot = await FirebaseFirestore.instance
+            .collection('reviews')
+            .where('productId', isEqualTo: product.id)
+            .where('userId', isEqualTo: user.id)
+            .where('isDeleted', isEqualTo: false)
+            .limit(1)
+            .get();
+        if (reviewSnapshot.docs.isNotEmpty) {
+          existingReviewId = reviewSnapshot.docs.first.id;
+        }
+      }
+
+      Get.back();
+      Get.to(() => WriteReviewScreen(product: product, reviewId: existingReviewId));
+    } catch (e) {
+      Get.back();
+      Get.snackbar("Lỗi", "Không thể mở trang đánh giá");
+    }
   }
 
   Widget _buildInfoRow(IconData icon, String title, String value) {

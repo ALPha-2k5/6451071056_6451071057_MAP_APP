@@ -115,4 +115,27 @@ class ProductService {
     }
     return ProductModel.fromSnapshot(doc, brandName);
   }
+
+  Future<List<ProductModel>> getNewArrivals() async {
+    final snapshot = await _db
+        .collection('products')
+        .where('isActive', isEqualTo: true)
+        .get();
+    List<ProductModel> products = [];
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      String? brandName;
+      if (data['brandId'] != null) {
+        final brandDoc = await _db.collection('brands').doc(data['brandId']).get();
+        brandName = brandDoc.data()?['name'];
+      }
+      products.add(ProductModel.fromSnapshot(doc, brandName));
+    }
+    products.sort((a, b) {
+      final aDate = a.createdAt?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.createdAt?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    });
+    return products.take(6).toList();
+  }
 }

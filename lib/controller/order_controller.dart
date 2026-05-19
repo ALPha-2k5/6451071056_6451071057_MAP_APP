@@ -90,10 +90,11 @@ Get.snackbar("Success", "Áp dụng coupon thành công");
 }
 /// ================= TOTAL =================
 double get total {
-return subTotal.value +
+final t = subTotal.value +
 tax.value +
 shippingFee.value -
 discountAmount.value;
+return t < 0 ? 0.0 : t;
 }
 /// ================= ADDRESS =================
 Future<void> fetchAddresses() async {

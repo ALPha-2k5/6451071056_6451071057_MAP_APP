@@ -243,7 +243,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Nội dung hiển thị bình thường (Banner + Sản phẩm phổ biến)
+  /// Nội dung hiển thị bình thường (Banner + Sản phẩm phổ biến + Sản phẩm mới nhất)
   Widget _buildNormalContent() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -278,6 +278,31 @@ class HomeScreen extends StatelessWidget {
                 childAspectRatio: 0.6,
               ),
               itemBuilder: (context, index) => ProductCard(product: productController.products[index]),
+            );
+          }),
+          const SizedBox(height: 32),
+          const Text('Sản phẩm mới nhất', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Obx(() {
+            if (productController.newArrivalProducts.isEmpty) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text("Đang cập nhật sản phẩm mới...", style: TextStyle(color: Colors.grey)),
+                ),
+              );
+            }
+            return GridView.builder(
+              itemCount: productController.newArrivalProducts.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.6,
+              ),
+              itemBuilder: (context, index) => ProductCard(product: productController.newArrivalProducts[index]),
             );
           }),
         ],

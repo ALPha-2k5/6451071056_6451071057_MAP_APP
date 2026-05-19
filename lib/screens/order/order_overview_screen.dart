@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/order_controller.dart';
 import '../../utils/currency.dart';
 import '../../controller/cart_controller.dart';
+import '../../data/models/coupon_model.dart';
 
 class OrderReviewScreen extends StatefulWidget {
   const OrderReviewScreen({super.key});
@@ -161,12 +163,11 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
                     ),
                   ),
 
-                  /// 2. NHẬP MÃ GIẢM GIÁ
+                  /// 2. MÃ KHUYẾN MÃI (COUPONS)
                   _buildSectionTitle("Mã khuyến mãi"),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(8),
-                    margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -213,6 +214,11 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  _buildAppliedCouponCard(),
+                  const SizedBox(height: 16),
+                  _buildAvailableCouponsList(),
+                  const SizedBox(height: 24),
 
                   /// 3. PHƯƠNG THỨC THANH TOÁN
                   _buildSectionTitle("Phương thức thanh toán"),
@@ -525,14 +531,241 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
           ),
         ),
         Text(
-          value < 0
-              ? "- ${formatVnd(value.abs())}"
-              : "${formatVnd(value)}",
+          value < 0 ? "- ${formatVnd(value.abs())}" : "${formatVnd(value)}",
           style: TextStyle(
             fontSize: fontSize,
             color: color ?? (bold ? Colors.black : Colors.black),
             fontWeight: bold ? FontWeight.bold : FontWeight.normal,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAppliedCouponCard() {
+    return Obx(() {
+      final coupon = controller.coupon.value;
+      if (coupon == null) return const SizedBox.shrink();
+
+      final isPercentage = coupon.discountType == DiscountType.percentage;
+      final badgeColor = isPercentage ? Colors.deepOrange : Colors.teal;
+      final icon = isPercentage ? Icons.percent : Icons.local_offer;
+
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: badgeColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: badgeColor.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: badgeColor,
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        "Đã áp dụng mã: ${coupon.code}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: badgeColor.shade800,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: badgeColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          isPercentage ? "${coupon.discountValue}%" : formatVnd(coupon.discountValue),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isPercentage
+                        ? "Mã giảm ${coupon.discountValue}% (Giảm được: ${formatVnd(controller.discountAmount.value)})"
+                        : "Mã giảm trực tiếp ${formatVnd(coupon.discountValue)}",
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                controller.coupon.value = null;
+                controller.discountAmount.value = 0.0;
+                couponController.clear();
+              },
+              icon: const Icon(Icons.close, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildAvailableCouponsList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Mã giảm giá dành cho bạn",
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+        const SizedBox(height: 10),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('coupons')
+              .where('isActive', isEqualTo: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Text(
+                "Hiện chưa có mã giảm giá nào.",
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              );
+            }
+
+            final docs = snapshot.data!.docs;
+            return SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: docs.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final coupon = CouponModel.fromJson({...data, 'id': docs[index].id});
+                  final isPercentage = coupon.discountType == DiscountType.percentage;
+                  final primaryColor = isPercentage ? Colors.deepOrange : Colors.teal;
+
+                  return Container(
+                    width: 280,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: primaryColor.withOpacity(0.2)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 70,
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              bottomLeft: Radius.circular(16),
+                            ),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isPercentage ? Icons.percent : Icons.local_offer,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isPercentage ? "${coupon.discountValue}%" : "VNĐ",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  coupon.code,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: primaryColor.shade800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  coupon.description.isNotEmpty
+                                      ? coupon.description
+                                      : (isPercentage ? "Giảm theo phần trăm" : "Giảm trực tiếp tiền mặt"),
+                                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                Obx(() {
+                                  final isApplied = controller.coupon.value?.code == coupon.code;
+                                  return SizedBox(
+                                    height: 26,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: isApplied ? Colors.grey : primaryColor,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        elevation: 0,
+                                      ),
+                                      onPressed: isApplied
+                                          ? null
+                                          : () {
+                                              couponController.text = coupon.code;
+                                              controller.applyCoupon(coupon.code);
+                                            },
+                                      child: Text(
+                                        isApplied ? "Đang dùng" : "Dùng ngay",
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ],
     );
